@@ -2,7 +2,7 @@
 export default function Conversations() {
   return (
     <div className="text-center text-udea-green text-xl mt-10">
-      🗂️ Aquí irá el historial de conversaciones
+      🗂️ Aquí irá el historial de conversaciones del chatbot
     </div>
   );
 }
