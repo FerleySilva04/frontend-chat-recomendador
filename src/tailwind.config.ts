@@ -6,10 +6,11 @@ const config: Config = {
     extend: {
       colors: {
         udea: {
-          green: "#006e3a", // verde institucional exacto
-          light: "#4caf50",
-          gray: "#f3f4f6",
-          text: "#1f2937",
+          green: "#006e3a",   // Verde institucional UdeA
+          dark: "#004f2e",    // Verde profundo (hover / contrast)
+          light: "#4caf50",   // Verde claro complementario
+          gray: "#f7f9f7",    // Gris fondo institucional
+          text: "#1f2937",    // Gris oscuro para textos
         },
       },
     },

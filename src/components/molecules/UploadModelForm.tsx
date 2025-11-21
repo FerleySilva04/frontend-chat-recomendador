@@ -1,48 +1,97 @@
-// src/components/molecules/UploadModelForm.tsx
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import api from "@/lib/axios";
+import { AiOutlineUpload, AiOutlineFile } from "react-icons/ai"; // iconos react-icons
 
-export function UploadModelForm({ onUpload }: { onUpload: () => void }) {
+interface Props {
+  onUpload: () => void;
+}
+
+export function UploadModelForm({ onUpload }: Props) {
   const [file, setFile] = useState<File | null>(null);
+  const [tipo, setTipo] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return alert("Selecciona un archivo .pkl para subir");
+    if (!file || !tipo) {
+      alert("Selecciona un tipo y un archivo.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("tipo", tipo);
 
     try {
-      await api.post("/api/models/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      setIsUploading(true);
+      setIsError(false);
+      setStatus("Subiendo...");
+
+      // POST al backend sin Content-Type fijo
+      const res = await api.post("/api/models/", formData);
+
+      setStatus(res.data.message);
       onUpload();
-      setFile(null);
-    } catch (err) {
-      console.error(err);
-      alert("Error al subir el modelo");
+    } catch (err: any) {
+      setIsError(true);
+      setStatus(err.response?.data?.detail || "Error subiendo archivo");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
     <form
-      onSubmit={handleSubmit}
-      className="flex items-center justify-center gap-3 bg-white border rounded-lg p-4 shadow-sm"
+      onSubmit={handleUpload}
+      className="flex flex-col md:flex-row items-center gap-4 p-6 rounded-2xl shadow-lg bg-udea-gray"
     >
-      <Input
-        type="file"
-        accept=".pkl"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="cursor-pointer"
-      />
-      <Button
-        type="submit"
-        className="bg-udea.green hover:bg-udea.light text-white"
+      {/* Select tipo */}
+      <div className="flex items-center gap-2">
+        <AiOutlineFile className="text-udea-green text-xl" />
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          className="p-2 rounded-lg border border-udea-green text-udea-text bg-white focus:outline-none focus:ring-2 focus:ring-udea-light"
+        >
+          <option value="">Selecciona tipo</option>
+          <option value="embeddings">Embeddings</option>
+          <option value="matriz">Matriz</option>
+          <option value="cursos">Cursos</option>
+        </select>
+      </div>
+
+      {/* Input file */}
+      <label
+        className="flex items-center gap-2 px-4 py-2 bg-white border border-udea-green rounded-lg cursor-pointer hover:bg-udea-light transition"
       >
-        Subir Modelo
-      </Button>
+        <AiOutlineUpload className="text-udea-green text-xl" />
+        {file ? file.name : "Seleccionar archivo"}
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="hidden"
+        />
+      </label>
+
+      {/* Botón subir */}
+      <button
+        type="submit"
+        disabled={isUploading}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white shadow transition
+          ${isUploading ? "bg-gray-400 cursor-not-allowed" : "bg-udea-green hover:bg-udea-light"}
+        `}
+      >
+        {isUploading ? "Subiendo..." : "Subir"}
+      </button>
+
+      {/* Estado */}
+      {status && (
+        <span className={`mt-2 md:mt-0 font-medium ${isError ? "text-red-500" : "text-udea-green"}`}>
+          {status}
+        </span>
+      )}
     </form>
   );
 }

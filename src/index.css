@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+@theme {
+  --color-udea-green: #006e3a;
+  --color-udea-light: #4caf50;
+  --color-udea-gray: #f3f4f6;
+  --color-udea-text: #1f2937;
+}
+
+/* Estilos para mensajes con formato */
+.html-message-container .html-message a {
+  @apply text-udea-green underline font-medium transition-colors hover:text-green-800 hover:no-underline;
+}
+
+.html-message-container .html-message strong {
+  @apply font-semibold text-gray-900;
+}
+
+.html-message-container .html-message em {
+  @apply italic text-gray-600;
+}
+
+.bg-white .html-message a {
+  color: #006e3a !important;
+}
+
+.bg-white .html-message a:hover {
+  color: #00592D !important;
+}
+
+/* 🔥 MANEJO DE TEXTOS LARGOS Y URLs */
+
+/* Clase válida */
+.break-all {
+  word-break: break-all !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Clase válida */
+.break-words {
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+}
+
+/* ❌ Eliminado: .word-break (no existe en Tailwind) */
+/* ❌ Eliminado: @apply word-break */
+
+/* Asegurar que los enlaces se rompan correctamente */
+.bg-white a {
+  word-break: break-all !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Estilos para URLs largas en mensajes del bot */
+.bg-white .text-gray-800 a {
+  @apply break-all; /* ✔ Clase válida de Tailwind */
+  max-width: 100%;
+  display: inline-block;
+}
+
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrollbar personalizado */
+.bg-udea-gray::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bg-udea-gray::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.bg-udea-gray::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.bg-udea-gray::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
