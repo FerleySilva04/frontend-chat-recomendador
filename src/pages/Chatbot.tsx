@@ -46,51 +46,27 @@ export default function Chatbot() {
     return `${start}...${end}`;
   };
 
-  const linkifyText = (text: string) => {
-    if (typeof text !== 'string') return text;
-
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
-
-    const parts = text.split(urlPattern);
-
-    return parts.map((part, index) => {
-      if (urlPattern.test(part)) {
-        const displayUrl = shortenUrl(part);
-        return (
-          <a
-            key={index}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-udea-green underline font-medium hover:text-green-800 transition-colors break-all"
-            title={part}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {displayUrl}
-          </a>
-        );
-      }
-      return part;
-    });
-  };
-
   const renderMessageContent = (content: string | any) => {
-    if (typeof content === 'object' && content.type === 'course_detail') {
+    if (typeof content === "object" && content.type === "course_detail") {
       return (
         <div className="space-y-2">
           <p>{content.message}</p>
-          <p className="font-semibold text-gray-900 text-base">{content.course_name}</p>
+
+          <p className="font-semibold text-gray-900 text-base">
+            {content.course_name}
+          </p>
+
           <p>
             <a
               href={content.course_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-udea-green underline font-medium hover:text-green-800 transition-colors break-all"
-              title={content.course_url}
+              className="text-udea-green underline font-medium hover:text-green-800 transition-colors break-words whitespace-normal"
             >
               {content.display_text}
             </a>
           </p>
+
           {content.continue_message && (
             <p className="text-gray-600 mt-3">{content.continue_message}</p>
           )}
@@ -98,7 +74,7 @@ export default function Chatbot() {
       );
     }
 
-    const text = typeof content === 'string' ? content : String(content);
+    const text = typeof content === "string" ? content : String(content);
 
     const urlPattern = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlPattern);
@@ -112,29 +88,44 @@ export default function Chatbot() {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-udea-green underline font-medium hover:text-green-800 transition-colors break-all"
+            className="text-udea-green underline font-medium hover:text-green-800 transition-colors break-words whitespace-normal"
             title={part}
-            onClick={(e) => e.stopPropagation()}
           >
             {displayUrl}
           </a>
         );
       } else {
         const markdownParts = part.split(/(\*\*.*?\*\*|_.*?_)/g);
+
         return markdownParts.map((markdownPart, mdIndex) => {
           const uniqueKey = `${index}-${mdIndex}`;
-          if (markdownPart.startsWith('**') && markdownPart.endsWith('**')) {
-            return <strong key={uniqueKey} className="font-semibold">{markdownPart.slice(2, -2)}</strong>;
+
+          if (markdownPart.startsWith("**") && markdownPart.endsWith("**")) {
+            return (
+              <strong key={uniqueKey} className="font-semibold">
+                {markdownPart.slice(2, -2)}
+              </strong>
+            );
           }
-          if (markdownPart.startsWith('_') && markdownPart.endsWith('_')) {
-            return <em key={uniqueKey} className="italic">{markdownPart.slice(1, -1)}</em>;
+
+          if (markdownPart.startsWith("_") && markdownPart.endsWith("_")) {
+            return (
+              <em key={uniqueKey} className="italic">
+                {markdownPart.slice(1, -1)}
+              </em>
+            );
           }
+
           return markdownPart;
         });
       }
     });
 
-    return <div className="leading-relaxed break-all">{processedParts}</div>;
+    return (
+      <div className="leading-relaxed break-words whitespace-normal">
+        {processedParts}
+      </div>
+    );
   };
 
   const handleOpenChat = () => {
@@ -165,13 +156,16 @@ export default function Chatbot() {
 
     try {
       const res = await axios.post<ApiResponse>(
-        "http://127.0.0.1:8000/api/chatbot/message",
+        //"http://127.0.0.1:8000/api/chatbot/message",
+        "https://aaa-herself-lol-dsl.trycloudflare.com/api/chatbot/message",
         payload
       );
 
       const data = res.data;
 
-      if (typeof data.id_conversation === "number") setConversationId(data.id_conversation);
+      if (typeof data.id_conversation === "number")
+        setConversationId(data.id_conversation);
+
       if (data.state) setBotState(data.state);
 
       if (Array.isArray(data.reply)) {
@@ -180,6 +174,7 @@ export default function Chatbot() {
           text: msg,
           created_at: new Date().toISOString(),
         }));
+
         setMessages((prev) => [...prev, ...botsMsgs]);
       } else {
         const botMsg: Message = {
@@ -187,9 +182,9 @@ export default function Chatbot() {
           text: data.reply,
           created_at: new Date().toISOString(),
         };
+
         setMessages((prev) => [...prev, botMsg]);
       }
-
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -199,7 +194,6 @@ export default function Chatbot() {
           created_at: new Date().toISOString(),
         },
       ]);
-      console.error("Error al enviar mensaje:", err);
     }
   };
 
@@ -208,10 +202,10 @@ export default function Chatbot() {
   }, [messages]);
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('es-CO', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    return new Date(dateString).toLocaleTimeString("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -221,7 +215,6 @@ export default function Chatbot() {
         <button
           onClick={handleOpenChat}
           className="fixed bottom-6 right-6 bg-udea-green hover:bg-[#00592D] text-white p-4 rounded-full shadow-lg transition-all duration-300 z-50 hover:scale-105"
-          aria-label="Abrir chat"
         >
           <Bot className="w-6 h-6" />
         </button>
@@ -232,12 +225,14 @@ export default function Chatbot() {
           <div className="bg-udea-green text-white p-4 flex justify-between items-center">
             <div>
               <h2 className="text-sm font-semibold">Chatbot de Cursos — UdeA</h2>
-              <p className="text-xs text-green-100 opacity-90">Te ayudo a encontrar cursos perfectos</p>
+              <p className="text-xs text-green-100 opacity-90">
+                Te ayudo a encontrar cursos perfectos
+              </p>
             </div>
+
             <button
               onClick={() => setIsOpen(false)}
               className="text-white hover:text-yellow-300 transition-colors p-1 rounded-full hover:bg-green-700"
-              aria-label="Cerrar chat"
             >
               <X className="w-5 h-5" />
             </button>
@@ -247,27 +242,42 @@ export default function Chatbot() {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
+                className={`flex ${
+                  msg.sender === "user" ? "justify-end" : "justify-start"
+                } animate-fade-in`}
               >
                 <div
-                  className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm transition-all break-all ${msg.sender === "user"
+                  className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm transition-all break-words whitespace-normal ${
+                    msg.sender === "user"
                       ? "bg-udea-green text-white rounded-br-none"
                       : "bg-white border border-gray-200 text-udea-text rounded-bl-none"
-                    }`}
+                  }`}
                 >
-                  <div className={msg.sender === "user" ? "text-white break-all" : "text-gray-800 break-all"}>
+                  <div
+                    className={
+                      msg.sender === "user"
+                        ? "text-white break-words whitespace-normal"
+                        : "text-gray-800 break-words whitespace-normal"
+                    }
+                  >
                     {renderMessageContent(msg.text)}
                   </div>
 
                   {msg.created_at && (
-                    <div className={`text-xs mt-2 ${msg.sender === "user" ? "text-green-200" : "text-gray-500"
-                      }`}>
+                    <div
+                      className={`text-xs mt-2 ${
+                        msg.sender === "user"
+                          ? "text-green-200"
+                          : "text-gray-500"
+                      }`}
+                    >
                       {formatTime(msg.created_at)}
                     </div>
                   )}
                 </div>
               </div>
             ))}
+
             <div ref={chatEndRef} />
           </div>
 
@@ -279,6 +289,7 @@ export default function Chatbot() {
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               className="flex-1 border-gray-300 focus:border-udea-green focus:ring-udea-green text-sm rounded-full px-4"
             />
+
             <Button
               onClick={sendMessage}
               disabled={!input.trim()}

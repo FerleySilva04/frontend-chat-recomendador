@@ -20,6 +20,7 @@
   @apply italic text-gray-600;
 }
 
+/* Color enlaces en fondo blanco */
 .bg-white .html-message a {
   color: #006e3a !important;
 }
@@ -28,32 +29,29 @@
   color: #00592D !important;
 }
 
-/* 🔥 MANEJO DE TEXTOS LARGOS Y URLs */
+/* 🔥 MANEJO CORRECTO DE TEXTOS Y URLs */
 
-/* Clase válida */
+/* Evitar cortar palabras incorrectamente */
 .break-all {
-  word-break: break-all !important;
+  word-break: normal !important;
   overflow-wrap: break-word !important;
 }
 
-/* Clase válida */
+/* Correcto para cortar URLs largas */
 .break-words {
   overflow-wrap: break-word !important;
   word-wrap: break-word !important;
 }
 
-/* ❌ Eliminado: .word-break (no existe en Tailwind) */
-/* ❌ Eliminado: @apply word-break */
-
-/* Asegurar que los enlaces se rompan correctamente */
+/* Asegurar que los enlaces NO se rompan mal */
 .bg-white a {
-  word-break: break-all !important;
+  word-break: break-word !important;
   overflow-wrap: break-word !important;
 }
 
-/* Estilos para URLs largas en mensajes del bot */
+/* URLs largas dentro de mensajes del bot */
 .bg-white .text-gray-800 a {
-  @apply break-all; /* ✔ Clase válida de Tailwind */
+  @apply break-words;
   max-width: 100%;
   display: inline-block;
 }
