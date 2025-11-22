@@ -2,12 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bot, X } from "lucide-react";
+import { Bot, X, SendHorizonal } from "lucide-react";
+
+// ----------- sonidos ----------
+const userSound = new Audio("/sounds/send.mp3");
+const botSound = new Audio("/sounds/receive.mp3");
 
 interface Message {
   sender: "user" | "bot";
   text: string | any;
   created_at?: string;
+  typing?: boolean;
 }
 
 interface ApiResponse {
@@ -22,36 +27,38 @@ export default function Chatbot() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [botState, setBotState] = useState<Record<string, any> | null>(null);
+
+  // NUEVO → evita que se muestren mensajes iniciales antes de tiempo
+  const [initialLoading, setInitialLoading] = useState(true);
+
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  const initialBotMessages: Message[] = [
-    { sender: "bot", text: "👋 ¡Hola! Soy tu asistente para encontrar cursos perfectos para ti." },
-    { sender: "bot", text: "Me encanta conectar a las personas con oportunidades de aprendizaje que realmente les sirvan." },
-    { sender: "bot", text: "Para empezar, **¿sobre qué tema te gustaría aprender?**" },
-    { sender: "bot", text: "_Puede ser cualquier cosa: programación, marketing, salud, arte, idiomas... ¡Tú dime!_ 🌟" },
+  // ---- Initial bot messages (with typing) ----
+  const initialBotMessagesText = [
+    "👋 ¡Hola! Soy tu asistente para encontrar cursos perfectos para ti.",
+    "Me encanta conectar a las personas con oportunidades de aprendizaje que realmente les sirvan.",
+    "Para empezar, **¿sobre qué tema te gustaría aprender?**",
+    "_Puede ser cualquier cosa: programación, marketing, salud, arte, idiomas... ¡Tú dime!_ 🌟",
   ];
 
+  // -------- SHORT URL --------
   const shortenUrl = (url: string, maxLength: number = 50) => {
     if (url.length <= maxLength) return url;
-
-    if (url.includes('udea.edu.co')) {
+    if (url.includes("udea.edu.co")) {
       const match = url.match(/q=(\d+)/);
-      if (match) {
-        return `https://udea.edu.co/...?q=${match[1]}`;
-      }
+      if (match) return `https://udea.edu.co/...?q=${match[1]}`;
     }
-
     const start = url.substring(0, maxLength / 2);
     const end = url.substring(url.length - maxLength / 4);
     return `${start}...${end}`;
   };
 
+  // -------- MESSAGE RENDER --------
   const renderMessageContent = (content: string | any) => {
     if (typeof content === "object" && content.type === "course_detail") {
       return (
         <div className="space-y-2">
           <p>{content.message}</p>
-
           <p className="font-semibold text-gray-900 text-base">
             {content.course_name}
           </p>
@@ -128,15 +135,77 @@ export default function Chatbot() {
     );
   };
 
-  const handleOpenChat = () => {
-    if (!isOpen && messages.length === 0) {
-      setMessages([...initialBotMessages]);
+  // -------- TYPING EFFECT (10ms por letra) --------
+  const typeMessage = async (fullText: string) => {
+    return new Promise<string>((resolve) => {
+      let current = "";
+      let i = 0;
+
+      const interval = setInterval(() => {
+        current += fullText[i];
+        i++;
+
+        setMessages((prev) => {
+          const copy = [...prev];
+          copy[copy.length - 1].text = current;
+          return copy;
+        });
+
+        if (i >= fullText.length) {
+          clearInterval(interval);
+          resolve(fullText);
+        }
+      }, 10);
+    });
+  };
+
+  // -------- Mostrar mensaje del bot con typing --------
+  const addBotMessage = async (text: any) => {
+    if (typeof text === "object" && text.type === "course_detail") {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text, created_at: new Date().toISOString() },
+      ]);
+      botSound.play();
+      return;
     }
+
+    setMessages((prev) => [
+      ...prev,
+      { sender: "bot", text: "", typing: true, created_at: new Date().toISOString() },
+    ]);
+
+    botSound.play();
+    await typeMessage(String(text));
+
+    setMessages((prev) => {
+      const copy = [...prev];
+      copy[copy.length - 1].typing = false;
+      return copy;
+    });
+  };
+
+  // -------- Inicialización con typing --------
+  const handleOpenChat = async () => {
+    if (!isOpen && messages.length === 0) {
+      setInitialLoading(true);
+
+      for (const msg of initialBotMessagesText) {
+        await addBotMessage(msg);
+        await new Promise((r) => setTimeout(r, 350));
+      }
+
+      setInitialLoading(false);
+    }
+
     setIsOpen(true);
   };
 
+  // -------- Enviar mensaje --------
   const sendMessage = async () => {
     if (!input.trim()) return;
+
+    userSound.play();
 
     const userMsg: Message = {
       sender: "user",
@@ -156,8 +225,7 @@ export default function Chatbot() {
 
     try {
       const res = await axios.post<ApiResponse>(
-        //"http://127.0.0.1:8000/api/chatbot/message",
-        "https://aaa-herself-lol-dsl.trycloudflare.com/api/chatbot/message",
+        "http://127.0.0.1:8000/api/chatbot/message",
         payload
       );
 
@@ -169,31 +237,15 @@ export default function Chatbot() {
       if (data.state) setBotState(data.state);
 
       if (Array.isArray(data.reply)) {
-        const botsMsgs: Message[] = data.reply.map((msg) => ({
-          sender: "bot" as const,
-          text: msg,
-          created_at: new Date().toISOString(),
-        }));
-
-        setMessages((prev) => [...prev, ...botsMsgs]);
+        for (const msg of data.reply) {
+          await addBotMessage(msg);
+          await new Promise((r) => setTimeout(r, 250));
+        }
       } else {
-        const botMsg: Message = {
-          sender: "bot",
-          text: data.reply,
-          created_at: new Date().toISOString(),
-        };
-
-        setMessages((prev) => [...prev, botMsg]);
+        await addBotMessage(data.reply);
       }
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: "😔 Lo siento, hubo un error al conectar con el servidor. ¿Podrías intentarlo de nuevo?",
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      await addBotMessage("😔 Lo siento, hubo un error al conectar con el servidor. Inténtalo de nuevo.");
     }
   };
 
@@ -209,6 +261,7 @@ export default function Chatbot() {
     });
   };
 
+  // ------------- UI -------------
   return (
     <>
       {!isOpen && (
@@ -239,44 +292,45 @@ export default function Chatbot() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-udea-gray">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${
-                  msg.sender === "user" ? "justify-end" : "justify-start"
-                } animate-fade-in`}
-              >
+            {!initialLoading &&
+              messages.map((msg, i) => (
                 <div
-                  className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm transition-all break-words whitespace-normal ${
-                    msg.sender === "user"
-                      ? "bg-udea-green text-white rounded-br-none"
-                      : "bg-white border border-gray-200 text-udea-text rounded-bl-none"
-                  }`}
+                  key={i}
+                  className={`flex ${
+                    msg.sender === "user" ? "justify-end" : "justify-start"
+                  } animate-fade-in`}
                 >
                   <div
-                    className={
+                    className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm transition-all break-words whitespace-normal ${
                       msg.sender === "user"
-                        ? "text-white break-words whitespace-normal"
-                        : "text-gray-800 break-words whitespace-normal"
-                    }
+                        ? "bg-udea-green text-white rounded-br-none"
+                        : "bg-white border border-gray-200 text-udea-text rounded-bl-none"
+                    }`}
                   >
-                    {renderMessageContent(msg.text)}
-                  </div>
-
-                  {msg.created_at && (
                     <div
-                      className={`text-xs mt-2 ${
+                      className={
                         msg.sender === "user"
-                          ? "text-green-200"
-                          : "text-gray-500"
-                      }`}
+                          ? "text-white break-words whitespace-normal"
+                          : "text-gray-800 break-words whitespace-normal"
+                      }
                     >
-                      {formatTime(msg.created_at)}
+                      {renderMessageContent(msg.text)}
                     </div>
-                  )}
+
+                    {msg.created_at && (
+                      <div
+                        className={`text-xs mt-2 ${
+                          msg.sender === "user"
+                            ? "text-green-200"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {formatTime(msg.created_at)}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
             <div ref={chatEndRef} />
           </div>
@@ -295,7 +349,7 @@ export default function Chatbot() {
               disabled={!input.trim()}
               className="bg-udea-green hover:bg-[#00592D] text-white text-sm px-4 transition-colors rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Enviar
+              <SendHorizonal className="w-4 h-4" />
             </Button>
           </div>
         </div>
