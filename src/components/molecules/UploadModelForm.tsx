@@ -29,7 +29,7 @@ export function UploadModelForm({ onUpload }: Props) {
       setIsError(false);
       setStatus("Subiendo...");
 
-      // POST al backend sin Content-Type fijo
+      // POST al backend
       const res = await api.post("/api/models/", formData);
 
       setStatus(res.data.message);
@@ -59,6 +59,7 @@ export function UploadModelForm({ onUpload }: Props) {
           <option value="embeddings">Embeddings</option>
           <option value="matriz">Matriz</option>
           <option value="cursos">Cursos</option>
+          <option value="fechas">Fechas</option> {/* ✅ Nuevo campo */}
         </select>
       </div>
 

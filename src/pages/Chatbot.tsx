@@ -238,12 +238,16 @@ export default function Chatbot() {
 
       if (Array.isArray(data.reply)) {
         for (const msg of data.reply) {
+          if (!msg) continue; // ⬅️ evita undefined, null o ""
           await addBotMessage(msg);
           await new Promise((r) => setTimeout(r, 250));
         }
       } else {
-        await addBotMessage(data.reply);
+        if (data.reply) {       // ⬅️ evita undefined
+          await addBotMessage(data.reply);
+        }
       }
+
     } catch (err) {
       await addBotMessage("😔 Lo siento, hubo un error al conectar con el servidor. Inténtalo de nuevo.");
     }
@@ -296,16 +300,14 @@ export default function Chatbot() {
               messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex ${
-                    msg.sender === "user" ? "justify-end" : "justify-start"
-                  } animate-fade-in`}
+                  className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"
+                    } animate-fade-in`}
                 >
                   <div
-                    className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm transition-all break-words whitespace-normal ${
-                      msg.sender === "user"
+                    className={`p-3 rounded-2xl max-w-[90%] text-sm shadow-sm transition-all break-words whitespace-normal ${msg.sender === "user"
                         ? "bg-udea-green text-white rounded-br-none"
                         : "bg-white border border-gray-200 text-udea-text rounded-bl-none"
-                    }`}
+                      }`}
                   >
                     <div
                       className={
@@ -319,11 +321,10 @@ export default function Chatbot() {
 
                     {msg.created_at && (
                       <div
-                        className={`text-xs mt-2 ${
-                          msg.sender === "user"
+                        className={`text-xs mt-2 ${msg.sender === "user"
                             ? "text-green-200"
                             : "text-gray-500"
-                        }`}
+                          }`}
                       >
                         {formatTime(msg.created_at)}
                       </div>

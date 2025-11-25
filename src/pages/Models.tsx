@@ -6,12 +6,14 @@ interface ModelStatus {
   embeddings: boolean;
   matriz: boolean;
   cursos: boolean;
+  fechas: boolean;  // 🟢 Nuevo modelo
 }
 
 const MODEL_ICONS: Record<string, string> = {
   embeddings: "📘",
   matriz: "📊",
   cursos: "📚",
+  fechas: "📅",     // 🟢 Icono para fechas.csv
 };
 
 export default function Models() {
@@ -19,6 +21,7 @@ export default function Models() {
     embeddings: false,
     matriz: false,
     cursos: false,
+    fechas: false,  // 🟢 nuevo
   });
 
   const [loading, setLoading] = useState(false);
@@ -93,7 +96,7 @@ export default function Models() {
           <p className="text-gray-400 animate-pulse">Consultando estado...</p>
         ) : (
           <ul className="space-y-4">
-            {(["embeddings", "matriz", "cursos"] as const).map((tipo) => (
+            {(["embeddings", "matriz", "cursos", "fechas"] as const).map((tipo) => (
               <li
                 key={tipo}
                 className="
